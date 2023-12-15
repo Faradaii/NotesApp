@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+::-webkit-scrollbar{
+    width: 5px;
+}
+
+::-webkit-scrollbar-thumb{
+    background: #dedede;
+    border-radius: 5em;
+}
+
+html{
+    overflow-x: hidden;
+}
+
+[contentEditable=true]:empty:not(:focus):before {
+    content:attr(data-placeholder)
+}
+
+.container-app{
+    width: 100vw;
+    position: relative;
+}
+
+.sticky-header{
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.main-section{
+    margin-inline: calc(1vw*.5);
+}
