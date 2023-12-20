@@ -20,6 +20,10 @@ html{
     content:attr(data-placeholder)
 }
 
+*{
+    transition: background .3s ease-in;
+}
+
 .container-app{
     width: 100vw;
     position: relative;
@@ -33,4 +37,9 @@ html{
 
 .main-section{
     margin-inline: calc(1vw*.5);
+}
+
+.text-2xs{
+    font-size: 0.65rem;
+    line-height: 0.75rem;
 }
