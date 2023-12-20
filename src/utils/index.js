@@ -1,5 +1,6 @@
 import Swal from 'sweetalert2';
-import warn from '../assets/warn.png'
+import deletewarn from '../assets/deletewarn.svg'
+import { localization } from './localization';
 
 const showFormattedDate = (date) => {
   const options = {
@@ -11,17 +12,23 @@ const showFormattedDate = (date) => {
   return new Date(date).toLocaleDateString('id-ID', options);
 };
 
-const showDeleteModal = async () => {
+const showDeleteModal = async (locale) => {
   let isConfirmed = false;
   return Swal.fire({
-    title: "Yakin menghapus note ini?",
-    imageUrl: warn,
+    title: localization[locale].showdeletemodal.title,
+    imageUrl: deletewarn,
+    imageWidth: 300,
+    imageHeight: 300,
     showCancelButton: true,
     confirmButtonColor: "#FF6359",
     cancelButtonColor: "#00C8AC",
-    confirmButtonText: "Hapus Aja!",
-    cancelButtonText: "Ngga jadi deh",
-    reverseButtons: true
+    confirmButtonText: localization[locale].showdeletemodal.acceptbtn,
+    cancelButtonText: localization[locale].showdeletemodal.declinebtn,
+    reverseButtons: true,
+    customClass: {
+      popup: "dark:bg-dark-2 bg-white",
+      title: "dark:text-white text-black"
+    }
   })
   .then((result) => {
     if (result.isConfirmed) {

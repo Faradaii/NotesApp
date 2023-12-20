@@ -6,7 +6,7 @@ function ButtonLink({ action }){
     const actionIcon = {
         'add' : {
             'icon': <MdOutlineAdd />, 
-            'path': '/notes/add',
+            'path': '/notes/new',
         },
     };
 

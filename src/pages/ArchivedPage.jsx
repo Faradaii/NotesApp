@@ -2,11 +2,13 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-import { getArchivedNotes, deleteNote, unarchiveNote, archiveNote, getNote } from '../utils/local-data';
+import { getArchivedNotes, deleteNote, unarchiveNote } from '../utils/network-data';
 import { showDeleteModal } from '../utils';
 import SearchBar from '../components/SearchBar';
 import NoData from '../components/note/NoData';
 import NoteList from '../components/note/NoteList';
+import NoteListLoading from '../components/loading/NoteListLoading';
+import LocaleContext from '../contexts/LocaleContext';
 
 function ArchivedPageWrapper(){
     const [ searchParams, setSearchParams ] = useSearchParams();
@@ -25,15 +27,26 @@ class ArchivedPage extends React.Component{
         super(props);
 
         this.state = {
-            notes: getArchivedNotes() ,
+            notes: [],
             searchq: props.defaultSearchq || '',
+            initializing: true,
         }
 
-        this.refreshNotes = () => {
+        this.refreshNotes = async () => {
+            const { error, data:notes } = await getArchivedNotes();
+            if (!error) {
+                this.setState(() => {
+                    return {
+                        notes,
+                        initializing: false,
+                    }
+                });
+            } 
+
             this.setState(() => {
                 return {
-                    notes: getArchivedNotes(),
-                };
+                    initializing: false
+                }
             });
         }
 
@@ -47,32 +60,39 @@ class ArchivedPage extends React.Component{
         }
 
         this.onDeleteHandler = async (id) => {
-            if (await showDeleteModal()) {
-                deleteNote(id);
+            if (await showDeleteModal(this.context.locale)) {
+                const { error } = await deleteNote(id);
+                if(!error) this.refreshNotes();
             }
-            this.refreshNotes();
         }
         
-        this.onArchieveHandler = (id) => {
-            let note = getNote(id);
-            note.archived ? unarchiveNote(id) : archiveNote(id);
-            this.refreshNotes();
+        this.onUnarchieveHandler = async (id) => {
+            const { error } = await unarchiveNote(id);
+            if(!error) this.refreshNotes();
         }
     }
+
+    async componentDidMount() {
+        await this.refreshNotes();
+    }
+
+    static contextType = LocaleContext;
 
     render(){
         let notes = this.state.notes.filter((note) => {
             return note.title.toLowerCase().includes(this.state.searchq.toLowerCase());
         });
         return(
-            <div className="mx-8 relative">
+            <div className="mx-8 relative flex flex-col gap-3 h-full">
                 <div>
                     <SearchBar searchq={this.state.searchq} onKeywordChange={this.onKeywordChangeHandler}/>
                 </div>
-                <div>
-                    {   
+                <div className="grow" id="container-list">
+                    {   this.state.initializing ? 
+                        <NoteListLoading />
+                        : 
                         notes.length > 0 ? 
-                        <NoteList notes={notes} onDelete={this.onDeleteHandler} onArchive={this.onArchieveHandler} /> : <NoData />
+                        <NoteList notes={notes} onDelete={this.onDeleteHandler} onArchive={this.onUnarchieveHandler} /> : <NoData />
                     }
                 </div>
             </div>

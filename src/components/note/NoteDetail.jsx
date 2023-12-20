@@ -2,6 +2,7 @@ import parser from 'html-react-parser';
 import PropTypes from 'prop-types';
 
 import { showFormattedDate } from '../../utils';
+import { noteItemPropTypes } from '../../proptypes/custom-proptypes';
 
 function NoteDetail({ note }){
     return (
@@ -14,7 +15,8 @@ function NoteDetail({ note }){
 }
 
 NoteDetail.propTypes = {
-    note: PropTypes.object.isRequired,
+    note: PropTypes.shape(noteItemPropTypes).isRequired,
+    
 };
 
 export default NoteDetail;

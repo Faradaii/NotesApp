@@ -1,32 +1,106 @@
-import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 
-import HomePageWrapper from './pages/HomePage';
-import ArchivedPageWrapper from './pages/ArchivedPage';
-import DetailPageWrapper from './pages/DetailPage';
-import ErrorPage from './pages/ErrorPage';
-
-import Navigation from './components/Navigation'
-import AddPageWrapper from './pages/AddPage';
+import { getPages } from './pages/index';
+import Layout from './layouts/Layout';
+import ThemeContext from './contexts/ThemeContext';
+import LocaleContext from './contexts/LocaleContext';
+import { getAccessToken, getUserLogged, putAccessToken } from './utils/network-data';
 
 function App() {
-  let location = useLocation();
+  const [ theme, setTheme ] = useState(() => localStorage.getItem('theme') || 'light');
+  const [ locale, setLocale ] = useState(() => localStorage.getItem('locale') || 'id');
+  const [ authedUser, setAuthedUser ] = useState(() => null);
+  const [ initializing, setInitializing ] = useState(true);
+  const [ pages, setPages ] = useState(() => getPages(false));
+
+  const loginSuccess = async ({ accessToken }) => {
+    putAccessToken(accessToken);
+    const { error, data: user} = await getUserLogged();
+    if(!error) {
+      setAuthedUser(() => user.name);
+      setPages(getPages(true));
+    }
+    setInitializing(false);
+  }
+
+  const logoutHandler = () => {
+    setAuthedUser(null);
+    localStorage.removeItem('accessToken');
+    setPages(() => getPages(false));
+  }
+
+  useEffect(() => {
+    async function getLogged() {
+      if (getAccessToken() !== null) {
+        const { error, data: user} = await getUserLogged();
+        if(!error) {
+          setAuthedUser(() => user.name);
+          setPages(getPages(true));
+        }
+      }
+      setInitializing(false);
+    }
+    getLogged();
+  }, []);
+
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  }
+
+  const themeContextValue = useMemo(() => {
+    return {
+      theme, 
+      toggleTheme,
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('class', theme);
+  }, [theme]);
+
+  const toggleLocale = () => {
+    setLocale((prevLocale) => (prevLocale === 'id' ? 'en' : 'id'));
+  }
+
+  const localeContextValue = useMemo(() => {
+    return {
+      locale, 
+      toggleLocale,
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    localStorage.setItem('locale', locale);
+  }, [locale]);
+
+
+  if(initializing){
+    return null;
+  }
+
   return (
-    <div className="container-app">
-      <header className="sticky-header">
-        <Navigation currentLocation={location.pathname}/>
-      </header>
-      <main className="main-section">
+    <LocaleContext.Provider value={localeContextValue}>
+      <ThemeContext.Provider value={themeContextValue}>
         <Routes>
-          <Route path="/" element={<HomePageWrapper />} />
-          <Route path="/archives" element={<ArchivedPageWrapper />} />
-          <Route path="/notes/:id" element={<DetailPageWrapper />} />
-          <Route path="/notes/add" element={<AddPageWrapper />} />
-          <Route path="*" element={<ErrorPage/>} />
+          <Route path='/*' element={<Layout user={authedUser} logoutHandler={logoutHandler}/>}>
+            {
+              pages.map((page) => (
+                <Route 
+                  key={page.name}
+                  path={page.path}
+                  element={page.elem({ loginSuccess: loginSuccess })}
+                />
+              ))
+            }
+          </Route>
         </Routes>
-      </main>
-    </div>
+      </ThemeContext.Provider>
+    </LocaleContext.Provider>
   );
+  
 }
 
 export default App;
